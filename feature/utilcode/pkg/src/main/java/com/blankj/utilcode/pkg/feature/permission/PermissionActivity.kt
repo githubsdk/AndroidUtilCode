@@ -92,7 +92,7 @@ class PermissionActivity : CommonActivity() {
                         }
                 ))
                 add(CommonItemSwitch(
-                        R.string.permission_write_settings_status,
+                        R.string.permission_draw_overlays_status,
                         Utils.Supplier {
                             return@Supplier PermissionUtils.isGrantedDrawOverlays()
                         },
