@@ -39,16 +39,16 @@ public final class PermissionUtils {
 
     private static PermissionUtils sInstance;
 
-    private String[]            mPermissionsParam;
+    private String[] mPermissionsParam;
     private OnRationaleListener mOnRationaleListener;
-    private SimpleCallback      mSimpleCallback;
-    private FullCallback        mFullCallback;
-    private ThemeCallback       mThemeCallback;
-    private Set<String>         mPermissions;
-    private List<String>        mPermissionsRequest;
-    private List<String>        mPermissionsGranted;
-    private List<String>        mPermissionsDenied;
-    private List<String>        mPermissionsDeniedForever;
+    private SimpleCallback mSimpleCallback;
+    private FullCallback mFullCallback;
+    private ThemeCallback mThemeCallback;
+    private Set<String> mPermissions;
+    private List<String> mPermissionsRequest;
+    private List<String> mPermissionsGranted;
+    private List<String> mPermissionsDenied;
+    private List<String> mPermissionsDeniedForever;
 
     private static SimpleCallback sSimpleCallback4WriteSettings;
     private static SimpleCallback sSimpleCallback4DrawOverlays;
@@ -363,10 +363,12 @@ public final class PermissionUtils {
     @RequiresApi(api = Build.VERSION_CODES.M)
     static final class PermissionActivityImpl extends UtilsTransActivity.TransActivityDelegate {
 
-        private static final String TYPE                = "TYPE";
-        private static final int    TYPE_RUNTIME        = 0x01;
-        private static final int    TYPE_WRITE_SETTINGS = 0x02;
-        private static final int    TYPE_DRAW_OVERLAYS  = 0x03;
+        private static final String TYPE = "TYPE";
+        private static final int TYPE_RUNTIME = 0x01;
+        private static final int TYPE_WRITE_SETTINGS = 0x02;
+        private static final int TYPE_DRAW_OVERLAYS = 0x03;
+
+        private static int currentRequestCode = -1;
 
         private static PermissionActivityImpl INSTANCE = new PermissionActivityImpl();
 
@@ -403,8 +405,10 @@ public final class PermissionUtils {
                 }
                 requestPermissions(activity);
             } else if (type == TYPE_WRITE_SETTINGS) {
+                currentRequestCode = TYPE_WRITE_SETTINGS;
                 startWriteSettingsActivity(activity, TYPE_WRITE_SETTINGS);
             } else if (type == TYPE_DRAW_OVERLAYS) {
+                currentRequestCode = TYPE_DRAW_OVERLAYS;
                 startOverlayPermissionActivity(activity, TYPE_DRAW_OVERLAYS);
             } else {
                 activity.finish();
@@ -442,7 +446,23 @@ public final class PermissionUtils {
         }
 
         @Override
+        public void onDestroy(final UtilsTransActivity activity) {
+            //这两种方式，在unity游戏中，如果app从后台切回，当前activity会被强制关闭，所以需要检测一下
+            //checkRequest(TYPE_DRAW_OVERLAYS);
+            //checkRequest(TYPE_WRITE_SETTINGS);
+            if (currentRequestCode != -1) {
+                checkRequest(currentRequestCode);
+                currentRequestCode = -1;
+            }
+            super.onDestroy(activity);
+        }
+
+        @Override
         public void onActivityResult(UtilsTransActivity activity, int requestCode, int resultCode, Intent data) {
+            activity.finish();
+        }
+
+        private void checkRequest(int requestCode) {
             if (requestCode == TYPE_WRITE_SETTINGS) {
                 if (sSimpleCallback4WriteSettings == null) return;
                 if (isGrantedWriteSettings()) {
@@ -465,7 +485,6 @@ public final class PermissionUtils {
                     }
                 }, 100);
             }
-            activity.finish();
         }
     }
 
